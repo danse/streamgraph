@@ -1,0 +1,6 @@
+.cabal-sandbox/
+Setup.hs
+cabal.sandbox.config
+dist/
+test.json
+test
