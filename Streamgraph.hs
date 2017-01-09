@@ -26,6 +26,19 @@ dateFormat = T.pack . formatTime defaultTimeLocale "%D"
 
 lastOfTriplet (_, _, x) = x
 
+-- given a list of pairs, generate all possible pairs
+allPairs p = [(f, s) | f <- allFirsts, s <- allSeconds]
+  where allFirsts = map fst p
+        allSeconds = map snd p
+
+-- every key has to be present every day, otherwise there will be a
+-- runtime error in a D3 function. This function fills the map with
+-- zeroes on the keys that are missing
+fillWithZeroes m =
+  let setDefault k = H.insertWith (+) k 0
+      allKeys = (allPairs . H.keys) m
+        in foldr setDefault m allKeys
+
 -- | Transform input data to JSON
 -- > transform [("a", 0.5, makeUni 2017 1 3), ("b", 0.2, makeUni 2017 1 4)]
 -- "[{\"key\":\"a\", \"value\": 0.5, \"date\": \"2017-01-04\"}]"
@@ -41,9 +54,12 @@ streamgraph = customVishnjeFiles options getDataFileName transform
 instance Hashable UTCTime where
   hashWithSalt = hashUsing dateFormat
 
+atMidnight :: UTCTime -> UTCTime
+atMidnight (UTCTime day dayTime) = UTCTime day (secondsToDiffTime 0)
+
 aggregate :: GraphInput -> GraphInput
-aggregate = map fromMapStructure . H.toList . foldr myInsert H.empty
+aggregate = map fromMapStructure . H.toList . fillWithZeroes . foldr myInsert H.empty
   where fromMapStructure ((x, z), y) = (x, y, z)
-        myInsert (x, y, z) = H.insertWith (+) (x, z) y
+        myInsert (x, y, z) = H.insertWith (+) (x, atMidnight z) y
 
 streamgraphAggregate = streamgraph . aggregate
