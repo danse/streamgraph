@@ -2,6 +2,7 @@
 module Streamgraph where
 
 import Vishnje
+import Vishnje.ToTimeSeries
 import Paths_streamgraph (getDataFileName)
 import Data.Time.Clock
 import Data.Time.Calendar (fromGregorian)
@@ -16,50 +17,55 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as TextLazy
 import qualified Data.Text.Lazy.Encoding as TextLazy
 
+data TextFloat = TextFloat { getText :: T.Text, getFloat :: Float }
+type Point = Timestamped TextFloat
+
+squashOrConcat a b
+  | a == "" = b
+  | b == "" = a
+  | a == b = a
+  | otherwise = T.concat [a, ", ", b]
+
+instance Monoid TextFloat where
+  mempty = TextFloat "" 0
+  mappend (TextFloat t1 f1) (TextFloat t2 f2) = TextFloat (squashOrConcat t1 t2) (f1 + f2)
+
+dateFormat :: UTCTime -> T.Text
+dateFormat = T.pack . formatTime defaultTimeLocale "%D"
+
 -- make an universal time value using year, month, day
 makeUni :: Integer -> Int -> Int -> UTCTime
 makeUni y m d = UTCTime (fromGregorian y m d) (secondsToDiffTime 0)
 
-type GraphInput = [(T.Text, Float, UTCTime)]
-
-dateFormat = T.pack . formatTime defaultTimeLocale "%D"
-
-lastOfTriplet (_, _, x) = x
-
--- given a list of pairs, generate all possible pairs
-allPairs p = [(f, s) | f <- allFirsts, s <- allSeconds]
-  where allFirsts = map fst p
-        allSeconds = map snd p
-
--- every key has to be present every day, otherwise there will be a
--- runtime error in a D3 function. This function fills the map with
--- zeroes on the keys that are missing
-fillWithZeroes m =
-  let setDefault k = H.insertWith (+) k 0
-      allKeys = (allPairs . H.keys) m
-        in foldr setDefault m allKeys
-
 -- | Transform input data to JSON
--- > transform [("a", 0.5, makeUni 2017 1 3), ("b", 0.2, makeUni 2017 1 4)]
--- "[{\"key\":\"a\", \"value\": 0.5, \"date\": \"2017-01-04\"}]"
-transform :: GraphInput -> T.Text
-transform =
-  let single (a, b, c) = A.Object (H.fromList [("key", A.String a), ("value", (A.Number . fromFloatDigits) b), ("date", (A.String . dateFormat) c)])
-  in TextLazy.toStrict . TextLazy.decodeUtf8 . A.encode . A.toJSON . A.Array . V.fromList . map single . sortOn lastOfTriplet
+toText :: [Point] -> T.Text
+toText =
+  let single (Timestamped (TextFloat te fl) ti) = A.Object (H.fromList [("key", A.String te), ("value", (A.Number . fromFloatDigits) fl), ("date", (A.String . dateFormat) ti)])
+  in TextLazy.toStrict . TextLazy.decodeUtf8 . A.encode . A.toJSON . A.Array . V.fromList . map single . sortOn getTime
 
 options = Options Version2 ChartDiv
 
+toPoint :: (T.Text, Float, UTCTime) -> Point
+toPoint (te, fl, ti) = Timestamped (TextFloat te fl) ti
+
+-- if some dates will be missing for some labels, a runtime error will
+-- be thrown. In order to prevent that, this function inefficiently
+-- generates empty data points for all labels and dates
+addAllPoints :: [Point] -> [Point]
+addAllPoints existing = existing ++ allPoints
+  where allPoints = [Timestamped (TextFloat te 0) ti | te <- texts, ti <- times]
+        texts = map (getText . getStamped) existing
+        times = map getTime existing
+
+groupWith :: (Eq b, Hashable b) => (a -> b) -> [a] -> [[a]]
+groupWith f = H.elems . foldr myInsert H.empty
+  where myInsert a = H.insertWith (++) (f a) [a]
+
+toTimeSeries :: [Point] -> [Point]
+toTimeSeries = concat . map (convert oneDay) . toStreams
+  where toStreams = groupWith (getText . getStamped)
+        oneDay = 60 * 60 * 24 :: NominalDiffTime
+
+transform = toText . toTimeSeries . addAllPoints . map toPoint
+
 streamgraph = customVishnjeFiles options getDataFileName transform
-
-instance Hashable UTCTime where
-  hashWithSalt = hashUsing dateFormat
-
-atMidnight :: UTCTime -> UTCTime
-atMidnight (UTCTime day dayTime) = UTCTime day (secondsToDiffTime 0)
-
-aggregate :: GraphInput -> GraphInput
-aggregate = map fromMapStructure . H.toList . fillWithZeroes . foldr myInsert H.empty
-  where fromMapStructure ((x, z), y) = (x, y, z)
-        myInsert (x, y, z) = H.insertWith (+) (x, atMidnight z) y
-
-streamgraphAggregate = streamgraph . aggregate

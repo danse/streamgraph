@@ -26,4 +26,4 @@ e2 = [("a", 100, makeUni 2017 1 6),
 
 main = do
   streamgraph d
-  streamgraphAggregate (e1 <> e2)
+  streamgraph (e1 <> e2)

@@ -13,8 +13,13 @@ keys = ["a", "b", "c"]
 
 toAggregate = [(k, v, d) | k <- keys, v <- [1..10], d <- dates]
 
+aggregate = toTimeSeries . map toPoint
+
 main :: IO ()
 main = hspec $ do
   describe "aggregate" $ do
     it "first case" $ do
       (length . aggregate) toAggregate `shouldBe` (length keys * length dates)
+  describe "the monoid" $ do
+    it "appends as expected" $
+      (getText (mappend (TextFloat "a" 1) (TextFloat "a" 2))) `shouldBe` "a"
