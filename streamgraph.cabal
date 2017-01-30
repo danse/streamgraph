@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                streamgraph
-version:             0.2.0.0
+version:             0.2.1.0
 synopsis:            library to generate a stream graph
 -- description:         
 -- license:             
@@ -16,13 +16,13 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 data-files: data/style.css,
-            data/logic.js
+            data/script.js
 
 library
   exposed-modules:     Streamgraph
   other-modules:       Paths_streamgraph   
   build-depends:       base >=4.8 && <4.9,
-                       vishnje,
+                       visie,
                        aeson,
                        time,
                        vector,
@@ -37,7 +37,7 @@ library
 executable streamgraph-browser-test
            main-is: streamgraph-browser-test.hs
            build-depends: base,
-                          vishnje,
+                          visie,
                           aeson,
                           time,
                           vector,
@@ -51,7 +51,7 @@ Test-Suite test
            type: exitcode-stdio-1.0
            main-is: Test.hs
            build-depends: base,
-                          vishnje,
+                          visie,
                           aeson,
                           time,
                           vector,

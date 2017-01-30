@@ -1,8 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Streamgraph where
 
-import Vishnje
-import Vishnje.ToTimeSeries
+import Visie
+import Visie.ToTimeSeries
+import Visie.Index
 import Paths_streamgraph (getDataFileName)
 import Data.Time.Clock
 import Data.Time.Calendar (fromGregorian)
@@ -43,7 +44,7 @@ toText =
   let single (Timestamped (TextFloat te fl) ti) = A.Object (H.fromList [("key", A.String te), ("value", (A.Number . fromFloatDigits) fl), ("date", (A.String . dateFormat) ti)])
   in TextLazy.toStrict . TextLazy.decodeUtf8 . A.encode . A.toJSON . A.Array . V.fromList . map single . sortOn getTime
 
-options = Options Version2 ChartDiv
+options = defaultOptions { d3Version = Version2, indexType = ChartDiv }
 
 toPoint :: (T.Text, Float, UTCTime) -> Point
 toPoint (te, fl, ti) = Timestamped (TextFloat te fl) ti
@@ -68,4 +69,4 @@ toTimeSeries = concat . map (convert oneDay) . toStreams
 
 transform = toText . toTimeSeries . addAllPoints . map toPoint
 
-streamgraph = customVishnjeFiles options getDataFileName transform
+streamgraph = customVisie options getDataFileName transform

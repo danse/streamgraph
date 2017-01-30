@@ -3,7 +3,7 @@ chart("data.csv", "orange");
 
 var datearray = [];
 var colorrange = [];
-var vishnje;
+var visie;
 
 function chart(csvpath, color) {
 
@@ -74,7 +74,7 @@ function chart(csvpath, color) {
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-  vishnje = function(data) {
+  visie = function(data) {
 
     data.forEach(function(d) {
       d.date = format.parse(d.date);
