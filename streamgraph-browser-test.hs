@@ -25,5 +25,5 @@ e2 = [("a", 100, makeUni 2017 1 6),
       ("c", 100, makeUni 2017 1 11)]
 
 main = do
-  streamgraph d
-  streamgraph (e1 <> e2)
+  streamgraph 1 d
+  streamgraph 1 (e1 <> e2)

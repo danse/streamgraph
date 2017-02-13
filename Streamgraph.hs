@@ -62,11 +62,11 @@ groupWith :: (Eq b, Hashable b) => (a -> b) -> [a] -> [[a]]
 groupWith f = H.elems . foldr myInsert H.empty
   where myInsert a = H.insertWith (++) (f a) [a]
 
-toTimeSeries :: [Point] -> [Point]
-toTimeSeries = concat . map (convert oneDay) . toStreams
+toTimeSeries :: Int -> [Point] -> [Point]
+toTimeSeries days = concat . map (convert seconds) . toStreams
   where toStreams = groupWith (getText . getStamped)
-        oneDay = 60 * 60 * 24 :: NominalDiffTime
+        seconds = fromIntegral (days * 60 * 60 * 24)
 
-transform = toText . toTimeSeries . addAllPoints . map toPoint
+transform days = toText . toTimeSeries days . addAllPoints . map toPoint
 
-streamgraph = customVisie options getDataFileName transform
+streamgraph days = customVisie options getDataFileName (transform days)
