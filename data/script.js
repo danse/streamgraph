@@ -21,8 +21,8 @@ function chart(csvpath, color) {
   var format = d3.time.format("%m/%d/%y");
 
   var margin = {top: 20, right: 40, bottom: 30, left: 30};
-  var width = document.body.clientWidth - margin.left - margin.right;
-  var height = 400 - margin.top - margin.bottom;
+  var width = document.documentElement.clientWidth - margin.left - margin.right;
+  var height = document.documentElement.clientHeight - margin.top - margin.bottom;
 
   var tooltip = d3.select("body")
         .append("div")
@@ -69,8 +69,13 @@ function chart(csvpath, color) {
         .y1(function(d) { return y(d.y0 + d.y); });
 
   var svg = d3.select(".chart").append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
+        .attr(
+          "viewBox",
+          "0 0 " +
+            (width + margin.left + margin.right) +
+            " " +
+            (height + margin.top + margin.bottom)
+        )
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
