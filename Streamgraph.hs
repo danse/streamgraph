@@ -62,6 +62,12 @@ groupWith :: (Eq b, Hashable b) => (a -> b) -> [a] -> [[a]]
 groupWith f = H.elems . foldr myInsert H.empty
   where myInsert a = H.insertWith (++) (f a) [a]
 
+-- | This function groups points with the same description, which are
+-- then converted to time series and concatenated in a flat list of
+-- points. So points with the same description are considered like a
+-- single time series, and are one after the other in the final
+-- list. This might affect the proper functioning of the drawing
+-- logic, so test after changes
 toTimeSeries :: Int -> [Point] -> [Point]
 toTimeSeries days = concat . map (convert seconds) . toStreams
   where toStreams = groupWith (getText . getStamped)
