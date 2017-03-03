@@ -126,22 +126,24 @@ function chart(csvpath, color) {
         mousex = d3.mouse(this);
         mousex = mousex[0];
         var invertedx = x.invert(mousex);
-        invertedx = invertedx.getMonth() + invertedx.getDate();
+        var dateArrayIndex = invertedx.getMonth() + invertedx.getDate();
         var selected = (d.values);
         for (var k = 0; k < selected.length; k++) {
           datearray[k] = selected[k].date
           datearray[k] = datearray[k].getMonth() + datearray[k].getDate();
         }
 
-        mousedate = datearray.indexOf(invertedx);
+        mousedate = datearray.indexOf(dateArrayIndex);
         pro = d.values[mousedate].value;
 
         d3.select(this)
           .classed("hover", true)
           .attr("stroke", strokecolor)
           .attr("stroke-width", "0.5px"), 
-        tooltip.html( "<p>" + d.key + "<br>" + pro + "</p>" ).style("visibility", "visible");
-        
+
+        tooltip
+          .html( "<p>" + d.key + "<br>" + pro + "<br>" + invertedx.toDateString() + "</p>" )
+          .style("visibility", "visible");
       })
       .on("mouseout", function(d, i) {
         svg.selectAll(".layer")
