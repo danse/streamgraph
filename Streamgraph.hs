@@ -58,6 +58,9 @@ addAllPoints existing = existing ++ allPoints
         texts = map (getText . getStamped) existing
         times = map getTime existing
 
+-- | given a function `f` and a list `l`, produce a list of lists of
+-- elements of `l` that produce the same result when `f` is applied to
+-- them
 groupWith :: (Eq b, Hashable b) => (a -> b) -> [a] -> [[a]]
 groupWith f = H.elems . foldr myInsert H.empty
   where myInsert a = H.insertWith (++) (f a) [a]
