@@ -119,7 +119,7 @@ function chart(csvpath, color) {
         svg.selectAll(".layer").transition()
           .duration(250)
           .attr("opacity", function(d, j) {
-            return j != i ? 0.6 : 1;
+            return j != i ? 0.2 : 1;
           })})
 
       .on("mousemove", function(d, i) {
