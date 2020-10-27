@@ -21,7 +21,7 @@ data-files: data/style.css,
 library
   exposed-modules:     Streamgraph
   other-modules:       Paths_streamgraph   
-  build-depends:       base >=4.8 && <4.9,
+  build-depends:       base,
                        visie,
                        aeson,
                        time,

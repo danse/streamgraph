@@ -4,6 +4,7 @@ module Streamgraph where
 import Visie
 import Visie.ToTimeSeries
 import Visie.Index
+import Visie.Data
 import Paths_streamgraph (getDataFileName)
 import Data.Time.Clock
 import Data.Time.Calendar (fromGregorian)
@@ -18,18 +19,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as TextLazy
 import qualified Data.Text.Lazy.Encoding as TextLazy
 
-data TextFloat = TextFloat { getText :: T.Text, getFloat :: Float }
 type Point = Timestamped TextFloat
-
-squashOrConcat a b
-  | a == "" = b
-  | b == "" = a
-  | a == b = a
-  | otherwise = T.concat [a, ", ", b]
-
-instance Monoid TextFloat where
-  mempty = TextFloat "" 0
-  mappend (TextFloat t1 f1) (TextFloat t2 f2) = TextFloat (squashOrConcat t1 t2) (f1 + f2)
 
 dateFormat :: UTCTime -> T.Text
 dateFormat = T.pack . formatTime defaultTimeLocale "%D"
