@@ -20,7 +20,7 @@ function chart(csvpath, color) {
 
   var format = d3.time.format("%m/%d/%y");
 
-  var margin = {top: 20, right: 40, bottom: 30, left: 30};
+  var margin = {top: 20, right: 40, bottom: 30, left: 40};
   var width = document.documentElement.clientWidth - margin.left - margin.right;
   var height = document.documentElement.clientHeight - margin.top - margin.bottom;
 
