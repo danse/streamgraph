@@ -2,7 +2,7 @@
 module Streamgraph where
 
 import Visie
-import Visie.ToTimeSeries
+import Visie.ToTimeSeries (convert, Timestamped(..))
 import Visie.Index
 import Visie.Data
 import Paths_streamgraph (getDataFileName)
@@ -56,16 +56,29 @@ groupWith f = H.elems . foldr myInsert H.empty
   where myInsert a = H.insertWith (++) (f a) [a]
 
 -- | This function groups points with the same description, which are
--- then converted to time series and concatenated in a flat list of
--- points. So points with the same description are considered like a
--- single time series, and are one after the other in the final
--- list. This might affect the proper functioning of the drawing
+-- then mapped and concatenated in a flat list of points. So points
+-- with the same description are considered like a single time
+-- series. Order might affect the proper functioning of the drawing
 -- logic, so test after changes
-toTimeSeries :: Int -> [Point] -> [Point]
-toTimeSeries days = concat . map (convert seconds) . toStreams
-  where toStreams = groupWith (getText . getStamped)
+toTimeSeries :: ([Point] -> [Point]) -> [Point] -> [Point]
+toTimeSeries onEachStream = concat
+                            . map onEachStream
+                            . toStreams
+  where toStreams :: [Point] -> [[Point]]
+        toStreams = groupWith (getText . getStamped)
+
+streamgraph :: Int -> Maybe Int -> [(T.Text, Float, UTCTime)] -> IO ()
+streamgraph days maybeLastPoints =
+  customVisie options getDataFileName transform
+  where transform = toText
+                    . toTimeSeries onEachStream
+                    . addAllPoints
+                    . map toPoint
+        -- | turn each stream into a time series and take the last n
+        -- points
+        onEachStream :: [Point] -> [Point]
+        onEachStream = maybeLastN maybeLastPoints . convert seconds
         seconds = fromIntegral (days * 60 * 60 * 24)
-
-transform days = toText . toTimeSeries days . addAllPoints . map toPoint
-
-streamgraph days = customVisie options getDataFileName (transform days)
+        maybeLastN :: Maybe Int -> [a] -> [a]
+        maybeLastN Nothing  l = l
+        maybeLastN (Just n) l = drop (length l - n) l
