@@ -4,3 +4,4 @@ cabal.sandbox.config
 dist/
 test.json
 test
+dist-newstyle/
