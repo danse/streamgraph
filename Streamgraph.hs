@@ -6,6 +6,7 @@ import Visie.ToTimeSeries (convert, Timestamped(..))
 import Visie.Index
 import Visie.Data
 import Paths_streamgraph (getDataFileName)
+import Data.DateTime (DateTime)
 import Data.Time.Clock
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Format (formatTime, defaultTimeLocale)
@@ -67,6 +68,35 @@ toTimeSeries onEachStream = concat
   where toStreams :: [Point] -> [[Point]]
         toStreams = groupWith (getText . getStamped)
 
+-- | sort `elements` concatenating their monoid when their time falls
+-- within the same interval
+convertPoints :: NominalDiffTime -> [Point] -> [Point]
+convertPoints interval elements = sampler sorted
+  where sorted = sortOn getTime elements
+        times = iterator interval (getTime (head sorted))
+        sampler = consume times
+        iterator :: NominalDiffTime -> DateTime -> [DateTime]
+        iterator interval start = iterate (addUTCTime interval) start
+        getText (Timestamped (TextFloat t _) _) = t
+        label = getText $ head elements
+        -- at every call, the recursive function returns a processed list, and
+        -- it gets a non processed list and a reference date about the last
+        -- emitted element. if the next element would have a date greater than
+        -- the reference + the interval, a filling element is
+        -- created. otherwise, the function will look ahead and merge all
+        -- elements within the same interval, pick a representative date for
+        -- the merged elements and use it as the new reference
+        consume :: [DateTime] -> [Point] -> [Point]
+        consume (t:ts) [] = []
+        consume (t:ts) elements
+          | length preceding == 0 = filled : rest
+          | otherwise = foldl (merge t) filled preceding : rest
+          where (preceding, succeeding) = span ((<= t) . getTime) elements
+                filled = toPoint (label, 0, t)
+                rest = consume ts succeeding
+                merge :: Monoid a => DateTime -> Timestamped a -> Timestamped a -> Timestamped a
+                merge t (Timestamped a _) (Timestamped b _) = Timestamped (mappend a b) t
+
 streamgraph :: Int -> Maybe Int -> [(T.Text, Float, UTCTime)] -> IO ()
 streamgraph days maybeLastPoints =
   customVisie options getDataFileName transform
@@ -77,7 +107,7 @@ streamgraph days maybeLastPoints =
         -- | turn each stream into a time series and take the last n
         -- points
         onEachStream :: [Point] -> [Point]
-        onEachStream = maybeLastN maybeLastPoints . convert seconds
+        onEachStream = maybeLastN maybeLastPoints . convertPoints seconds
         seconds = fromIntegral (days * 60 * 60 * 24)
         maybeLastN :: Maybe Int -> [a] -> [a]
         maybeLastN Nothing  l = l
