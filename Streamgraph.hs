@@ -2,7 +2,8 @@
 module Streamgraph where
 
 import Visie
-import Visie.ToTimeSeries (convert, Timestamped(..))
+import Visie.Data (TextFloat(TextFloat, getText), toText)
+import Visie.ToTimeSeries
 import Visie.Index
 import Visie.Data
 import Paths_streamgraph (getDataFileName)
@@ -13,12 +14,8 @@ import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Scientific (fromFloatDigits)
 import Data.Hashable
 import Data.List (sortOn)
-import qualified Data.Aeson as A
-import qualified Data.Vector as V
 import qualified Data.HashMap.Strict as H
 import qualified Data.Text as T
-import qualified Data.Text.Lazy as TextLazy
-import qualified Data.Text.Lazy.Encoding as TextLazy
 
 type Point = Timestamped TextFloat
 
@@ -28,12 +25,6 @@ dateFormat = T.pack . formatTime defaultTimeLocale "%D"
 -- make an universal time value using year, month, day
 makeUni :: Integer -> Int -> Int -> UTCTime
 makeUni y m d = UTCTime (fromGregorian y m d) (secondsToDiffTime 0)
-
--- | Transform input data to JSON
-toText :: [Point] -> T.Text
-toText =
-  let single (Timestamped (TextFloat te fl) ti) = A.Object (H.fromList [("key", A.String te), ("value", (A.Number . fromFloatDigits) fl), ("date", (A.String . dateFormat) ti)])
-  in TextLazy.toStrict . TextLazy.decodeUtf8 . A.encode . A.toJSON . A.Array . V.fromList . map single . sortOn getTime
 
 options = defaultOptions { d3Version = Version2, indexType = ChartDiv }
 
