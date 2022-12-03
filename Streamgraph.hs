@@ -7,7 +7,6 @@ import Visie.ToTimeSeries
 import Visie.Index
 import Visie.Data
 import Paths_streamgraph (getDataFileName)
-import Data.DateTime (DateTime)
 import Data.Time.Clock
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Format (formatTime, defaultTimeLocale)
@@ -66,7 +65,7 @@ convertPoints interval elements = sampler sorted
   where sorted = sortOn getTime elements
         times = iterator interval (getTime (head sorted))
         sampler = consume times
-        iterator :: NominalDiffTime -> DateTime -> [DateTime]
+        iterator :: NominalDiffTime -> UTCTime -> [UTCTime]
         iterator interval start = iterate (addUTCTime interval) start
         getText (Timestamped (TextFloat t _) _) = t
         label = getText $ head elements
@@ -77,7 +76,7 @@ convertPoints interval elements = sampler sorted
         -- created. otherwise, the function will look ahead and merge all
         -- elements within the same interval, pick a representative date for
         -- the merged elements and use it as the new reference
-        consume :: [DateTime] -> [Point] -> [Point]
+        consume :: [UTCTime] -> [Point] -> [Point]
         consume (t:ts) [] = []
         consume (t:ts) elements
           | length preceding == 0 = filled : rest
@@ -85,7 +84,7 @@ convertPoints interval elements = sampler sorted
           where (preceding, succeeding) = span ((<= t) . getTime) elements
                 filled = toPoint (label, 0, t)
                 rest = consume ts succeeding
-                merge :: Monoid a => DateTime -> Timestamped a -> Timestamped a -> Timestamped a
+                merge :: Monoid a => UTCTime -> Timestamped a -> Timestamped a -> Timestamped a
                 merge t (Timestamped a _) (Timestamped b _) = Timestamped (mappend a b) t
 
 streamgraph :: Int -> Maybe Int -> [(T.Text, Float, UTCTime)] -> IO ()
