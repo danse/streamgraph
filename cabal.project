@@ -1,6 +1,6 @@
 packages: streamgraph.cabal
 
 repository visie
-        url: file+noindex:///home/francesco/hub/visie/dist-newstyle/sdist/
-repository web-output
-        url: file+noindex:///home/francesco/hub/web-output/dist-newstyle/sdist/
+        url: file+noindex:///home/marea/hub/visie/dist-newstyle/sdist/
+repository browse
+        url: file+noindex:///home/marea/hub/browse/dist-newstyle/sdist/
